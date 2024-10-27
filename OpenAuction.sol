@@ -33,8 +33,12 @@ contract OpenAuction {
             pendingReturns[highestBidder] += highestBid;
         }
 
+        // 计算出价加权
+        uint weight = calculateBidWeight();
+        uint weightedBid = msg.value * weight;
+
         highestBidder = msg.sender;
-        highestBid = msg.value;
+        highestBid = weightedBid;
         lastBidTime[msg.sender] = block.timestamp;
         emit HighestBidIncreased(msg.sender, msg.value);
 
@@ -42,6 +46,13 @@ contract OpenAuction {
         if (block.timestamp + 5 minutes >= auctionEndTime) {
             auctionEndTime += auctionExtensionTime;
         }
+    }
+
+    function calculateBidWeight() internal view returns (uint) {
+        if (auctionEndTime <= block.timestamp + 5 minutes) {
+            return 2; // 在最后5分钟内，出价加权为2倍
+        }
+        return 1; // 正常出价加权为1倍
     }
 
     function withdraw() external returns (bool) {
