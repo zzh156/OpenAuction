@@ -6,8 +6,8 @@ contract OpenAuction {
     address public highestBidder;
     uint public highestBid;
     uint public auctionEndTime;
-    uint public auctionExtensionTime = 5 minutes; // 拍卖终局延长时间
-    uint public biddingCooldown = 1 minutes; // 出价冷却期
+    uint public auctionExtensionTime = 5 minutes; // Auction extension time
+    uint public biddingCooldown = 1 minutes; // Bidding cooldown period
     mapping(address => uint) public pendingReturns;
     mapping(address => uint) public lastBidTime;
 
@@ -22,18 +22,18 @@ contract OpenAuction {
     }
 
     function bid() external payable {
-        require(block.timestamp <= auctionEndTime, "拍卖已结束");
-        require(msg.value > highestBid, "出价低于当前最高出价");
+        require(block.timestamp <= auctionEndTime, "Auction has ended");
+        require(msg.value > highestBid, "Bid is lower than current highest bid");
         require(
             lastBidTime[msg.sender] + biddingCooldown <= block.timestamp,
-            "出价冷却期未结束"
+            "Bidding cooldown period not yet finished"
         );
 
         if (highestBid != 0) {
             pendingReturns[highestBidder] += highestBid;
         }
 
-        // 计算出价加权
+        // Calculate bid weight
         uint weight = calculateBidWeight();
         uint weightedBid = msg.value * weight;
 
@@ -42,7 +42,7 @@ contract OpenAuction {
         lastBidTime[msg.sender] = block.timestamp;
         emit HighestBidIncreased(msg.sender, msg.value);
 
-        // 如果在拍卖结束前的最后几分钟内出价，延长拍卖时间
+        // If bidding happens in the last few minutes of the auction, extend the auction time
         if (block.timestamp + 5 minutes >= auctionEndTime) {
             auctionEndTime += auctionExtensionTime;
         }
@@ -50,14 +50,14 @@ contract OpenAuction {
 
     function calculateBidWeight() internal view returns (uint) {
         if (auctionEndTime <= block.timestamp + 5 minutes) {
-            return 2; // 在最后5分钟内，出价加权为2倍
+            return 2; // In the last 5 minutes, the bid weight is doubled
         }
-        return 1; // 正常出价加权为1倍
+        return 1; // Normal bid weight is 1
     }
 
     function withdraw() external returns (bool) {
         uint amount = pendingReturns[msg.sender];
-        require(amount > 0, "没有待退还的出价");
+        require(amount > 0, "No bids to withdraw");
 
         pendingReturns[msg.sender] = 0;
 
@@ -69,8 +69,8 @@ contract OpenAuction {
     }
 
     function endAuction() external {
-        require(block.timestamp >= auctionEndTime, "拍卖还未结束");
-        require(!ended, "拍卖已结束");
+        require(block.timestamp >= auctionEndTime, "Auction not yet ended");
+        require(!ended, "Auction has already ended");
 
         ended = true;
         emit AuctionEnded(highestBidder, highestBid);

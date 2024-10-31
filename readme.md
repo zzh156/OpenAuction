@@ -91,7 +91,6 @@ contract OpenAuction {
         payable(seller).transfer(highestBid);
     }
 }
-
 ```
 ---
 ## ✨ **已实现功能**
